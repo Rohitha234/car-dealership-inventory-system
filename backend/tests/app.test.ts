@@ -20,25 +20,25 @@ describe("Cars API", () => {
     });
 });
 
-// This must be at the very end of the file
-afterAll(async () => {
-    await pool.end();
-});
-
 describe("Single Car API", () => {
     test("should return 404 when car is not found", async () => {
-    const response = await request(app).get("/cars/9999");
+        const response = await request(app).get("/cars/9999");
 
-    expect(response.status).toBe(404);
-    expect(response.body).toHaveProperty("message", "Car not found");
-});
+        expect(response.status).toBe(404);
+        expect(response.body).toHaveProperty(
+            "message",
+            "Car not found"
+        );
+    });
+
     test("should return a car by id", async () => {
-        const response = await request(app).get("/cars/1");
+        const response = await request(app).get("/cars/3");
 
         expect(response.status).toBe(200);
         expect(response.body).toHaveProperty("car");
     });
 });
+
 describe("Create Car API", () => {
     test("should create a new car", async () => {
         const newCar = {
@@ -54,9 +54,13 @@ describe("Create Car API", () => {
             .send(newCar);
 
         expect(response.status).toBe(201);
-        expect(response.body).toHaveProperty("message", "Car created successfully");
+        expect(response.body).toHaveProperty(
+            "message",
+            "Car created successfully"
+        );
     });
 });
+
 describe("Update Car API", () => {
     test("should update a car", async () => {
         const updatedCar = {
@@ -65,7 +69,7 @@ describe("Update Car API", () => {
         };
 
         const response = await request(app)
-            .put("/cars/1")
+            .put("/cars/3")
             .send(updatedCar);
 
         expect(response.status).toBe(200);
@@ -75,10 +79,11 @@ describe("Update Car API", () => {
         );
     });
 });
+
 describe("Delete Car API", () => {
     test("should delete a car", async () => {
         const response = await request(app)
-            .delete("/cars/1");
+            .delete("/cars/3");
 
         expect(response.status).toBe(200);
         expect(response.body).toHaveProperty(
@@ -86,4 +91,27 @@ describe("Delete Car API", () => {
             "Car deleted successfully"
         );
     });
+});
+
+describe("Create Car Validation", () => {
+    test("should return 400 when required fields are missing", async () => {
+        const invalidCar = {
+            brand: "Toyota"
+        };
+
+        const response = await request(app)
+            .post("/cars")
+            .send(invalidCar);
+
+        expect(response.status).toBe(400);
+        expect(response.body).toHaveProperty(
+            "message",
+            "All fields are required"
+        );
+    });
+});
+
+// Keep this at the VERY END
+afterAll(async () => {
+    await pool.end();
 });

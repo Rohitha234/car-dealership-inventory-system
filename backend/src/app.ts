@@ -59,6 +59,12 @@ app.post("/cars", async (req, res) => {
     try {
         const { brand, model, year, price, quantity } = req.body;
 
+        if (!brand || !model || !year || !price || quantity === undefined) {
+            return res.status(400).json({
+                message: "All fields are required"
+            });
+        }
+
         const [result]: any = await pool.query(
             `INSERT INTO cars (brand, model, year, price, quantity)
              VALUES (?, ?, ?, ?, ?)`,
