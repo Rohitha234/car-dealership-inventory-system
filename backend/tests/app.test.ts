@@ -2,6 +2,8 @@ import request from "supertest";
 import app from "../src/app";
 import pool from "../src/db";
 
+let testCarId: number;
+
 describe("Database Connection", () => {
     test("should connect to MySQL database", async () => {
         const [rows] = await pool.query("SELECT 1 + 1 AS result");
@@ -11,6 +13,23 @@ describe("Database Connection", () => {
 });
 
 describe("Cars API", () => {
+
+    beforeAll(async () => {
+        const newCar = {
+            brand: "Test Brand",
+            model: "Test Model",
+            year: 2024,
+            price: 25000,
+            quantity: 5
+        };
+
+        const response = await request(app)
+            .post("/cars")
+            .send(newCar);
+
+        testCarId = response.body.id;
+    });
+
     test("should return all cars", async () => {
         const response = await request(app).get("/cars");
 
@@ -18,9 +37,7 @@ describe("Cars API", () => {
         expect(response.body).toHaveProperty("cars");
         expect(Array.isArray(response.body.cars)).toBe(true);
     });
-});
 
-describe("Single Car API", () => {
     test("should return 404 when car is not found", async () => {
         const response = await request(app).get("/cars/9999");
 
@@ -32,14 +49,13 @@ describe("Single Car API", () => {
     });
 
     test("should return a car by id", async () => {
-        const response = await request(app).get("/cars/3");
+        const response = await request(app)
+            .get(`/cars/${testCarId}`);
 
         expect(response.status).toBe(200);
         expect(response.body).toHaveProperty("car");
     });
-});
 
-describe("Create Car API", () => {
     test("should create a new car", async () => {
         const newCar = {
             brand: "Honda",
@@ -59,9 +75,7 @@ describe("Create Car API", () => {
             "Car created successfully"
         );
     });
-});
 
-describe("Update Car API", () => {
     test("should update a car", async () => {
         const updatedCar = {
             price: 3500000,
@@ -69,7 +83,7 @@ describe("Update Car API", () => {
         };
 
         const response = await request(app)
-            .put("/cars/3")
+            .put(`/cars/${testCarId}`)
             .send(updatedCar);
 
         expect(response.status).toBe(200);
@@ -78,12 +92,10 @@ describe("Update Car API", () => {
             "Car updated successfully"
         );
     });
-});
 
-describe("Delete Car API", () => {
     test("should delete a car", async () => {
         const response = await request(app)
-            .delete("/cars/3");
+            .delete(`/cars/${testCarId}`);
 
         expect(response.status).toBe(200);
         expect(response.body).toHaveProperty(
@@ -91,9 +103,7 @@ describe("Delete Car API", () => {
             "Car deleted successfully"
         );
     });
-});
 
-describe("Create Car Validation", () => {
     test("should return 400 when required fields are missing", async () => {
         const invalidCar = {
             brand: "Toyota"
@@ -111,7 +121,6 @@ describe("Create Car Validation", () => {
     });
 });
 
-// Keep this at the VERY END
 afterAll(async () => {
     await pool.end();
 });
