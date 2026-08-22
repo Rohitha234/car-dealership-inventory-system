@@ -59,9 +59,21 @@ app.post("/cars", async (req, res) => {
     try {
         const { brand, model, year, price, quantity } = req.body;
 
+        // Check missing fields
         if (!brand || !model || !year || !price || quantity === undefined) {
             return res.status(400).json({
                 message: "All fields are required"
+            });
+        }
+
+        // Check invalid values
+        if (
+            year <= 0 ||
+            price <= 0 ||
+            quantity < 0
+        ) {
+            return res.status(400).json({
+                message: "Invalid car values"
             });
         }
 
@@ -88,6 +100,18 @@ app.put("/cars/:id", async (req, res) => {
     try {
         const id = req.params.id;
         const { price, quantity } = req.body;
+
+        if (price === undefined || quantity === undefined) {
+            return res.status(400).json({
+                message: "Price and quantity are required"
+            });
+        }
+
+        if (price <= 0 || quantity < 0) {
+            return res.status(400).json({
+                message: "Invalid update values"
+            });
+        }
 
         const [result]: any = await pool.query(
             `UPDATE cars
@@ -141,5 +165,4 @@ app.delete("/cars/:id", async (req, res) => {
         });
     }
 });
-
 export default app;

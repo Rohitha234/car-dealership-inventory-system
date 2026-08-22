@@ -93,17 +93,47 @@ describe("Cars API", () => {
         );
     });
 
-    test("should delete a car", async () => {
-        const response = await request(app)
-            .delete(`/cars/${testCarId}`);
+  test("should delete a car", async () => {
+    const newCar = {
+        brand: "Delete Test",
+        model: "Test Car",
+        year: 2024,
+        price: 20000,
+        quantity: 2
+    };
 
-        expect(response.status).toBe(200);
-        expect(response.body).toHaveProperty(
-            "message",
-            "Car deleted successfully"
-        );
-    });
+    const createResponse = await request(app)
+        .post("/cars")
+        .send(newCar);
 
+    console.log("Created car:", createResponse.body);
+
+    expect(createResponse.status).toBe(201);
+    expect(createResponse.body).toHaveProperty("id");
+
+    const deleteCarId = createResponse.body.id;
+
+    console.log("Deleting car ID:", deleteCarId);
+
+    const [rows]: any = await pool.query(
+        "SELECT * FROM cars WHERE id = ?",
+        [deleteCarId]
+    );
+
+    console.log("Car directly from database:", rows);
+
+    const response = await request(app)
+        .delete(`/cars/${deleteCarId}`);
+
+    console.log("Delete response:", response.body);
+
+    expect(response.status).toBe(200);
+
+    expect(response.body).toHaveProperty(
+        "message",
+        "Car deleted successfully"
+    );
+});
     test("should return 400 when required fields are missing", async () => {
         const invalidCar = {
             brand: "Toyota"
@@ -117,6 +147,43 @@ describe("Cars API", () => {
         expect(response.body).toHaveProperty(
             "message",
             "All fields are required"
+        );
+    });
+    test("should return 400 for invalid car values", async () => {
+    const invalidCar = {
+        brand: "Toyota",
+        model: "Camry",
+        year: -5,
+        price: -100,
+        quantity: -2
+    };
+
+    const response = await request(app)
+        .post("/cars")
+        .send(invalidCar);
+
+    expect(response.status).toBe(400);
+    expect(response.body).toHaveProperty(
+        "message",
+        "Invalid car values"
+    );
+    });
+});
+describe("Update Car Validation", () => {
+    test("should return 400 for invalid update values", async () => {
+        const invalidUpdate = {
+            price: -500,
+            quantity: -2
+        };
+
+        const response = await request(app)
+            .put("/cars/1")
+            .send(invalidUpdate);
+
+        expect(response.status).toBe(400);
+        expect(response.body).toHaveProperty(
+            "message",
+            "Invalid update values"
         );
     });
 });
