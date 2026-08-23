@@ -1,29 +1,35 @@
+// Import React hooks for managing component state and performing actions on component load
 import { useEffect, useState } from "react";
+
+// Import Axios for making HTTP requests to the backend API
 import axios from "axios";
 
 function App() {
+  // Store the list of cars retrieved from the backend
   const [cars, setCars] = useState<any[]>([]);
 
-  // Authentication states
+  // Manage the user's authentication and registration screen state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
 
+  // Store user input for registration and login
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // Car states
+  // Manage car editing, searching, and add-car form visibility
   const [editingCar, setEditingCar] = useState<any>(null);
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
 
+  // Store input values for adding a new car
   const [brand, setBrand] = useState("");
   const [model, setModel] = useState("");
   const [year, setYear] = useState("");
   const [price, setPrice] = useState("");
   const [quantity, setQuantity] = useState("");
 
-  // GET ALL CARS
+  // Fetch all cars from the backend and update the car inventory state
   const fetchCars = async () => {
     try {
       const response = await axios.get("http://localhost:3000/cars");
@@ -33,7 +39,7 @@ function App() {
     }
   };
 
-  // CHECK LOGIN ON PAGE REFRESH
+  // Check for an existing login token and load car data when the application starts
   useEffect(() => {
     const token = localStorage.getItem("token");
 
@@ -44,7 +50,7 @@ function App() {
     fetchCars();
   }, []);
 
-  // LOGIN
+  // Authenticate the user and store the JWT token after successful login
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -54,6 +60,7 @@ function App() {
         password
       });
 
+      // Store the JWT token to maintain the user's login session
       localStorage.setItem("token", response.data.token);
 
       setIsLoggedIn(true);
@@ -69,7 +76,7 @@ function App() {
     }
   };
 
-  // REGISTER
+  // Register a new user and reset the form after successful registration
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -85,12 +92,12 @@ function App() {
 
       alert(response.data.message);
 
-      // Clear fields
+      // Clear registration form fields
       setName("");
       setEmail("");
       setPassword("");
 
-      // Switch back to Login
+      // Return to the login screen after successful registration
       setIsRegistering(false);
 
     } catch (error: any) {
@@ -102,7 +109,7 @@ function App() {
     }
   };
 
-  // LOGOUT
+  // Remove the stored token and clear user data when logging out
   const handleLogout = () => {
     localStorage.removeItem("token");
 
@@ -114,15 +121,17 @@ function App() {
     alert("Logged out successfully!");
   };
 
-  // ADD CAR
+  // Validate car details and send an authenticated request to add a new car
   const handleAddCar = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Ensure that all required car fields are filled
     if (!brand || !model || !year || !price || quantity === "") {
       alert("Please fill in all fields");
       return;
     }
 
+    // Validate numerical values before sending the request
     if (
       Number(year) <= 0 ||
       Number(price) <= 0 ||
@@ -133,6 +142,7 @@ function App() {
     }
 
     try {
+      // Retrieve the JWT token for accessing the protected endpoint
       const token = localStorage.getItem("token");
 
       await axios.post(
@@ -145,12 +155,14 @@ function App() {
           quantity: Number(quantity)
         },
         {
+          // Send the JWT token in the Authorization header
           headers: {
             Authorization: `Bearer ${token}`
           }
         }
       );
 
+      // Reset the form after successfully adding the car
       setBrand("");
       setModel("");
       setYear("");
@@ -159,6 +171,7 @@ function App() {
 
       setShowForm(false);
 
+      // Reload the inventory to display the newly added car
       fetchCars();
 
       alert("Car added successfully!");
@@ -172,7 +185,7 @@ function App() {
     }
   };
 
-  // DELETE CAR
+  // Confirm deletion and remove the selected car from the inventory
   const handleDelete = async (id: number) => {
     const confirmDelete = window.confirm(
       "Are you sure you want to delete this car?"
@@ -183,6 +196,7 @@ function App() {
     }
 
     try {
+      // Retrieve the JWT token for accessing the protected endpoint
       const token = localStorage.getItem("token");
 
       await axios.delete(
@@ -194,6 +208,7 @@ function App() {
         }
       );
 
+      // Update the local car list without reloading the entire page
       setCars(cars.filter((car) => car.id !== id));
 
       alert("Car deleted successfully!");
@@ -207,8 +222,9 @@ function App() {
     }
   };
 
-  // UPDATE CAR
+  // Validate and update the selected car using its ID
   const handleUpdate = async () => {
+    // Ensure that all required fields contain valid values
     if (
       !editingCar.brand ||
       !editingCar.model ||
@@ -220,6 +236,7 @@ function App() {
       return;
     }
 
+    // Validate numerical values before updating the car
     if (
       Number(editingCar.year) <= 0 ||
       Number(editingCar.price) <= 0 ||
@@ -230,6 +247,7 @@ function App() {
     }
 
     try {
+      // Retrieve the JWT token for accessing the protected endpoint
       const token = localStorage.getItem("token");
 
       await axios.put(
@@ -248,6 +266,7 @@ function App() {
         }
       );
 
+      // Update the modified car in the local state
       setCars(
         cars.map((car) =>
           car.id === editingCar.id
@@ -263,6 +282,7 @@ function App() {
         )
       );
 
+      // Close the edit form after successful update
       setEditingCar(null);
 
       alert("Car updated successfully!");
@@ -276,14 +296,14 @@ function App() {
     }
   };
 
-  // SEARCH CARS
+  // Filter cars based on the entered brand or model search value
   const filteredCars = cars.filter(
     (car) =>
       car.brand.toLowerCase().includes(search.toLowerCase()) ||
       car.model.toLowerCase().includes(search.toLowerCase())
   );
 
-  // DASHBOARD CALCULATIONS
+  // Calculate dashboard statistics from the current car inventory
   const totalCars = cars.length;
 
   const totalQuantity = cars.reduce(
@@ -297,7 +317,7 @@ function App() {
     0
   );
 
-  // LOGIN / REGISTER SCREEN
+  // Display the login or registration screen when the user is not authenticated
   if (!isLoggedIn) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-100 p-6">
@@ -315,6 +335,7 @@ function App() {
               : "Login to manage your car inventory"}
           </p>
 
+          {/* Display the name field only during registration */}
           {isRegistering && (
             <input
               type="text"
@@ -351,6 +372,7 @@ function App() {
             {isRegistering ? "Register" : "Login"}
           </button>
 
+          {/* Allow users to switch between login and registration forms */}
           <p className="mt-5 text-center text-sm text-gray-600">
             {isRegistering
               ? "Already have an account?"
@@ -374,10 +396,11 @@ function App() {
     );
   }
 
-  // DASHBOARD
+  // Display the main inventory dashboard after successful authentication
   return (
     <div className="min-h-screen bg-gray-100">
 
+      {/* Application header and logout control */}
       <header className="flex items-center justify-between bg-blue-600 px-8 py-5 text-white shadow-md">
         <div>
           <h1 className="text-2xl font-bold">
@@ -403,6 +426,7 @@ function App() {
           Dashboard
         </h2>
 
+        {/* Display summary statistics for the current inventory */}
         <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-3">
 
           <div className="rounded-lg bg-white p-6 shadow">
@@ -437,6 +461,7 @@ function App() {
 
         </div>
 
+        {/* Display the edit form only when a car is selected for editing */}
         {editingCar && (
           <div className="mb-8 rounded-lg bg-white p-6 shadow">
             <h2 className="mb-4 text-2xl font-bold text-gray-800">
@@ -526,6 +551,7 @@ function App() {
           </div>
         )}
 
+        {/* Main inventory section with search and add-car functionality */}
         <div className="rounded-lg bg-white p-6 shadow">
 
           <div className="mb-6 flex items-center justify-between">
@@ -551,6 +577,7 @@ function App() {
             </div>
           </div>
 
+          {/* Display the add-car form when requested by the user */}
           {showForm && (
             <form
               onSubmit={handleAddCar}
@@ -623,6 +650,7 @@ function App() {
             </form>
           )}
 
+          {/* Display the filtered car inventory in a table */}
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
 
@@ -640,6 +668,7 @@ function App() {
 
               <tbody>
                 {filteredCars.length > 0 ? (
+                  // Render each car that matches the search criteria
                   filteredCars.map((car) => (
                     <tr key={car.id} className="border-b">
                       <td className="px-3 py-3">{car.id}</td>
@@ -658,6 +687,7 @@ function App() {
                       <td className="px-3 py-3">
                         <div className="flex gap-2">
                           <button
+                            // Select the current car and open the edit form
                             onClick={() => setEditingCar(car)}
                             className="rounded bg-yellow-500 px-3 py-1 text-white hover:bg-yellow-600"
                           >
@@ -665,6 +695,7 @@ function App() {
                           </button>
 
                           <button
+                            // Delete the selected car after confirmation
                             onClick={() => handleDelete(car.id)}
                             className="rounded bg-red-500 px-3 py-1 text-white hover:bg-red-600"
                           >
@@ -675,6 +706,7 @@ function App() {
                     </tr>
                   ))
                 ) : (
+                  // Display a message when no cars match the search
                   <tr>
                     <td
                       colSpan={7}
@@ -695,4 +727,5 @@ function App() {
   );
 }
 
+// Export the main application component
 export default App;
